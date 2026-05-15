@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOZA AI | بوظة AI</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff5f8;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #ff477e;
+        }
+
+        input {
+            width: 80%;
+            padding: 12px;
+            margin: 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+
+        button {
+            background: #ff477e;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #e0366a;
+        }
+
+        .status {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            min-height: 50px;
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        #count {
+            font-weight: bold;
+            color: #ff477e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h1>BOZA-AI 🍦</h1>
+
+        <div id="login-section">
+            <p>مرحباً بك في بوظة AI! يرجى تسجيل الدخول لتبدأ محاولاتك (1000 محاولة يومياً).</p>
+            <button onclick="login()">تسجيل دخول بجيميل 🚀</button>
+        </div>
+
+        <div id="chat-section" style="display:none;">
+            <div class="status">
+                أهلاً <span id="user-name"></span> |
+                المحاولات المتبقية: <span id="count">1000</span>
+            </div>
+            <hr>
+            <input type="text" id="user-msg" placeholder="اسأل بوظة عن أي شيء...">
+            <button id="send-btn" onclick="askBoza()">إرسال</button>
+            <div id="response">أهلاً بك! أنا بوظة AI، كيف يمكنني مساعدتك اليوم؟</div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات الـ Config الخاصة بك من الصورة
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMetpQAYBidsrQURd-IHZjdy40HCLOqxc",
+            authDomain: "boza-ai.firebaseapp.com",
+            databaseURL: "https://boza-ai-default-rtdb.firebaseio.com",
+            projectId: "boza-ai",
+            storageBucket: "boza-ai.firebasestorage.app",
+            messagingSenderId: "484944586365",
+            appId: "1:484944586365:web:c2fb53d8ad6e1710cff314",
+            measurementId: "G-0D2G7VG4JM"
+        };
+
+        // تهيئة Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        let currentUser = null;
+        // استبدل هذا الرابط لاحقاً برابط Hugging Face اللي هقولك عليه
+        const BACKEND_URL = "https://amrboza22-boza-ai.hf.space";
+
+        function login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider).then((result) => {
+                currentUser = result.user;
+                document.getElementById('user-name').innerText = currentUser.displayName;
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('chat-section').style.display = 'block';
+                console.log("تم تسجيل الدخول بنجاح!");
+            }).catch((error) => {
+                alert("حدث خطأ أثناء تسجيل الدخول: " + error.message);
+            });
+        }
+
+        async function askBoza() {
+            const promptInput = document.getElementById('user-msg');
+            const resDiv = document.getElementById('response');
+            const sendBtn = document.getElementById('send-btn');
+
+            if (!promptInput.value.trim()) return;
+
+            const prompt = promptInput.value;
+            promptInput.value = "";
+            resDiv.innerText = "بوظة بتفكر... 🍦";
+            sendBtn.disabled = true;
+
+            try {
+                // ملاحظة: هذا الطلب سيفشل حتى نقوم برفع كود البايثون في الخطوة القادمة
+                const response = await fetch(`${BACKEND_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: currentUser.uid, prompt: prompt })
+                });
+
+                const data = await response.json();
+                resDiv.innerText = data.reply;
+                document.getElementById('count').innerText = data.remaining;
+            } catch (error) {
+                resDiv.innerText = "خطأ: تأكد من تشغيل سيرفر البايثون (Backend) ووضع الرابط الصحيح.";
+                console.error(error);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
